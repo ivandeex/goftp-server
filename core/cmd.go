@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Command represents a Command interface to a ftp command
@@ -40,6 +41,7 @@ var (
 		"LPRT": commandLprt{},
 		"NLST": commandNlst{},
 		"MDTM": commandMdtm{},
+		"MFMT": commandMfmt{},
 		"MIC":  commandMic{},
 		"MKD":  commandMkd{},
 		"MODE": commandMode{},
@@ -553,6 +555,42 @@ func (cmd commandMdtm) Execute(conn *Conn, param string) {
 	} else {
 		conn.writeMessage(450, "File not available")
 	}
+}
+
+// commandMfmt responds to the MFMT FTP command. It allows the client to
+// set the last modified time of a file.
+type commandMfmt struct{}
+
+func (cmd commandMfmt) IsExtend() bool {
+	return true
+}
+
+func (cmd commandMfmt) RequireParam() bool {
+	return true
+}
+
+func (cmd commandMfmt) RequireAuth() bool {
+	return true
+}
+
+func (cmd commandMfmt) Execute(conn *Conn, param string) {
+	tokens := strings.SplitN(strings.TrimSpace(param), " ", 2)
+	if len(tokens) != 2 {
+		conn.writeMessage(550, "Incorrect parameter")
+		return
+	}
+	modTime, err := time.ParseInLocation("20060102150405", tokens[0], time.UTC)
+	if err != nil {
+		conn.writeMessage(550, "Incorrect time format")
+		return
+	}
+	path := conn.buildPath(tokens[1])
+	err = conn.driver.SetTime(path, modTime)
+	if err != nil {
+		conn.writeMessage(450, fmt.Sprintf("SetTime failed: %v", err))
+		return
+	}
+	conn.writeMessage(213, "SetTime OK")
 }
 
 // commandMkd responds to the MKD FTP command. It allows the client to create

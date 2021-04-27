@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"goftp.io/server/core"
 )
@@ -214,6 +215,19 @@ func (driver *Driver) PutFile(destPath string, data io.Reader, appendData bool) 
 	}
 
 	return bytes, nil
+}
+
+// SetTime implements Driver
+func (driver *Driver) SetTime(path string, modTime time.Time) error {
+	rPath := driver.realPath(path)
+	f, err := os.Lstat(rPath)
+	if err != nil {
+		return err
+	}
+	if f.IsDir() {
+		return errors.New("Not a file")
+	}
+	return nil
 }
 
 // DriverFactory implements DriverFactory

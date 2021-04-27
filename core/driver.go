@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"time"
 )
 
 // DriverFactory is a driver factory to create driver. For each client that connects to the server, a new FTPDriver is required.
@@ -58,6 +59,10 @@ type Driver interface {
 	// params  - destination path, an io.Reader containing the file data
 	// returns - the number of bytes writen and the first error encountered while writing, if any.
 	PutFile(string, io.Reader, bool) (int64, error)
+
+	// params  - path, mod_time
+	// returns - nil if the file was renamed or any error encountered
+	SetTime(string, time.Time) error
 }
 
 var _ Driver = &MultipleDriver{}
@@ -151,6 +156,18 @@ func (driver *MultipleDriver) PutFile(destPath string, data io.Reader, appendDat
 	return 0, errors.New("Not a file")
 }
 
+// SetTime implements Driver
+func (driver *MultipleDriver) SetTime(destPath string, modTime time.Time) error {
+	for prefix, driver := range driver.drivers {
+		if strings.HasPrefix(destPath, prefix) {
+			return driver.SetTime(strings.TrimPrefix(destPath, prefix), modTime)
+		}
+	}
+
+	return errors.New("Not a file")
+}
+
+// MultipleDriverFactory implements a DriverFactory
 // MultipleDriverFactory implements a DriverFactory
 type MultipleDriverFactory struct {
 	drivers map[string]Driver

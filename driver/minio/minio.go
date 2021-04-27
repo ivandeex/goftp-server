@@ -288,6 +288,25 @@ func (driver *Driver) PutFile(destPath string, data io.Reader, appendData bool) 
 	return size, driver.client.ComposeObject(dst, srcs)
 }
 
+// SetTime implements Driver
+func (driver *Driver) SetTime(path string, modTime time.Time) error {
+	var opts = minio.GetObjectOptions{}
+	object, err := driver.client.GetObject(driver.bucket, buildMinioPath(path), opts)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if object != nil {
+			object.Close()
+		}
+	}()
+	_, err = object.Stat()
+	if err != nil {
+		return err
+	}
+	return errors.New("SetTime unsupported")
+}
+
 // DriverFactory implements DriverFactory
 type DriverFactory struct {
 	endpoint        string
