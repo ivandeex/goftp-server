@@ -44,6 +44,8 @@ var (
 		"MFMT": commandMfmt{},
 		"MIC":  commandMic{},
 		"MKD":  commandMkd{},
+		"MLSD": commandList{true},
+		"MLST": commandList{true},
 		"MODE": commandMode{},
 		"NOOP": commandNoop{},
 		"OPTS": commandOpts{},
@@ -428,10 +430,12 @@ func (cmd commandEpsv) Execute(conn *Conn, param string) {
 
 // commandList responds to the LIST FTP command. It allows the client to retreive
 // a detailed listing of the contents of a directory.
-type commandList struct{}
+type commandList struct {
+	rfc3659 bool
+}
 
 func (cmd commandList) IsExtend() bool {
-	return false
+	return cmd.rfc3659
 }
 
 func (cmd commandList) RequireParam() bool {
@@ -470,6 +474,10 @@ func (cmd commandList) Execute(conn *Conn, param string) {
 	}
 
 	conn.writeMessage(150, "Opening ASCII mode data connection for file list")
+	if cmd.rfc3659 {
+		conn.sendOutofbandData(listFormatter(files).RFC3659())
+		return
+	}
 	conn.sendOutofbandData(listFormatter(files).Detailed())
 }
 
