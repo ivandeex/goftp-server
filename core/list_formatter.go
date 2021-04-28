@@ -47,3 +47,36 @@ func lpad(input string, length int) (result string) {
 	}
 	return
 }
+
+// RFC3659 returns a string that lists the collection of files
+// according to RFC3659, one per line
+func (formatter listFormatter) RFC3659() []byte {
+	buf := &bytes.Buffer{}
+	for _, file := range formatter {
+		kind := "file"
+		sizeField := "size"
+		if file.Mode().IsDir() {
+			switch file.Name() {
+			case ".":
+				kind = "cdir"
+			case "..":
+				kind = "pdir"
+			default:
+				kind = "dir"
+			}
+			sizeField = "sizd"
+		}
+		fmt.Fprintf(buf, "type=%s;", kind)
+		fmt.Fprintf(buf, "%s=%d;", sizeField, file.Size())
+		fmt.Fprintf(buf, "modify=%s;", file.ModTime().Format("20060102150405"))
+		fmt.Fprintf(buf, "UNIX.mode=%04o;", file.Mode().Perm())
+		if file.UID() != -1 {
+			fmt.Fprintf(buf, "UNIX.uid=%d", file.UID())
+		}
+		if file.GID() != -1 {
+			fmt.Fprintf(buf, "UNIX.gid=%d", file.GID())
+		}
+		fmt.Fprintf(buf, " %s\r\n", file.Name())
+	}
+	return buf.Bytes()
+}

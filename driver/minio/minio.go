@@ -96,6 +96,14 @@ func (m *minioFileInfo) Group() string {
 	return group
 }
 
+func (f *minioFileInfo) UID() int {
+	return -1
+}
+
+func (f *minioFileInfo) GID() int {
+	return -1
+}
+
 func (driver *Driver) isDir(path string) (bool, error) {
 	p := buildMinioDir(path)
 

@@ -10,6 +10,8 @@ import "os"
 type FileInfo interface {
 	os.FileInfo
 
+	UID() int
+	GID() int
 	Owner() string
 	Group() string
 }

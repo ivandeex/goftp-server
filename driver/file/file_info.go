@@ -25,3 +25,11 @@ func (f *fileInfo) Owner() string {
 func (f *fileInfo) Group() string {
 	return f.group
 }
+
+func (f *fileInfo) UID() int {
+	return -1
+}
+
+func (f *fileInfo) GID() int {
+	return -1
+}
